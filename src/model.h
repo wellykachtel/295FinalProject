@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "ge211.h"
+#include <ge211.h>
 
 namespace invaders {
 
@@ -16,9 +16,7 @@ namespace invaders {
     class Model {
     public:
 
-        explicit Model(int c = 3, int r = 3);
-        int c() const { return c_; }
-        int r() const { return r_; }
+        Model();
 
         //left or right, by a discrete distance
         void move_player(Player_direction);
@@ -29,10 +27,14 @@ namespace invaders {
         // levels 7-9, they move down and side to side, but faster
         void move_invaders();
 
-        //l ives will be displayed on the screen
+        // lives will be displayed on the screen
         // updated by `invader_bullet_hit_player`
         // and `invader_hit_player`
-        int  get_lives();
+        int get_lives();
+
+        int get_player_pos();
+
+        Player_direction get_player_direction();
 
         // score will be displayed on the screen
         // updated by `player_bullet_hit_invader`
@@ -67,11 +69,14 @@ namespace invaders {
         //check if 0 invaders, advance to next level
         bool check_player_win();
 
+        void init_invaders(int level);
+
 
 
     private:
 
         int level_;
+        int score_;
 
         struct player_ {
             int x_pos;
@@ -96,5 +101,7 @@ namespace invaders {
         //                    x x x x x x    x x x x x x x              x x x x x
         //                    x x x x x x    x   x   x   x                   x x x x x
     };
+
+
 
 }

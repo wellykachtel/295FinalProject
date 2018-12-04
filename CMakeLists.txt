@@ -1,12 +1,18 @@
 cmake_minimum_required(VERSION 3.3)
-project(fp CXX)
+project(invaders CXX)
 include(.ipd/cmake/CMakeLists.txt)
 
-set(CMAKE_CXX_STANDARD 14)
+add_program(model_test
+        test/model_test.cpp
+        src/model.cpp
+        src/view.cpp
+        src/controller.cpp)
+target_link_libraries(model_test ge211 catch)
 
-add_executable(fp
-        README.md src/spaceInvaders.cpp)
+add_program(invaders
+        src/spaceInvaders.cpp
+        src/model.cpp
+        src/view.cpp
+        src/controller.cpp)
+target_link_libraries(invaders ge211)
 
-add_program(model
-        src/model.h)
-target_link_libraries(model ge211)
