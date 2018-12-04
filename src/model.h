@@ -27,6 +27,8 @@ namespace invaders {
         // levels 7-9, they move down and side to side, but faster
         void move_invaders();
 
+        void move_bullets();
+
         // lives will be displayed on the screen
         // updated by `invader_bullet_hit_player`
         // and `invader_hit_player`
