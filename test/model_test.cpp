@@ -6,6 +6,6 @@ using namespace invaders;
 
 TEST_CASE("Make default")
 {
-
+    Model game;
 
 }

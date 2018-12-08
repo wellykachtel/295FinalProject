@@ -16,13 +16,11 @@ protected:
     void on_mouse_down(ge211::Mouse_button, ge211::Position) override;
     void draw(ge211::Sprite_set&) override;
     void on_key(ge211::Key key) override;
-    void pass_time(double seconds);
+    void on_frame(double seconds) override;
 
 private:
     Model model_;
     View view_;
-
-    int mouse_column_;
-    int mouse_row_;
+    ge211::Position mouse_pos_;
 };
 }

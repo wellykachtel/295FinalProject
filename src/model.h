@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <ge211.h>
+#include <memory>
 
 namespace invaders {
 
@@ -13,10 +14,11 @@ namespace invaders {
         easy, medium, hard
     };
 
+
     class Model {
     public:
 
-        Model();
+        explicit Model();
 
         //left or right, by a discrete distance
         void move_player(Player_direction);
@@ -36,7 +38,6 @@ namespace invaders {
 
         int get_player_pos();
 
-        Player_direction get_player_direction();
 
         // score will be displayed on the screen
         // updated by `player_bullet_hit_invader`
@@ -50,59 +51,68 @@ namespace invaders {
         // at the position where the shooting invader is
         void invader_shoot_bullet();
 
-        // goes through all player_bullet_ positions and
-        // checks if any have intersected with an invader, updates score
-        void player_bullet_hit_invader();
-
-        // goes through all invader_bullet_ positions and checks if any have
-        // intersected with the player, updates lives
-        void invader_bullet_hit_player();
-
-        // goes through all invaders_ positions and checks if any have
-        // intersected with the player, updates lives
-        bool invader_hit_player();
 
         //checks if something is within the screen
-        bool in_boundary(ge211::Position);
+        bool in_boundary(ge211::Basic_position<double>) const;
 
         //checks if 0 lives
-        bool check_player_lose();
+        bool check_player_lose() const;
 
         //check if 0 invaders, advance to next level
-        bool check_player_win();
-
-        void init_invaders(int level);
-
+        bool check_player_win() const;
 
 
     private:
 
         int level_;
         int score_;
+        double time_;
 
-        struct player_ {
+        struct player {
             int x_pos;
             int lives;
-            Player_direction dir;
         };
 
+        player player_;
+
         struct invader_ {
-            ge211::Position pos;
+            invader_(bool active, int hits_left, Invader_difficulty difficulty)
+                : active(active),hits_left(hits_left),difficulty(difficulty) {}
+            //ge211::Basic_position<double> pos;
             bool active;
             int hits_left;
             Invader_difficulty difficulty;
 
         };
 
-        std::vector<invader_> invaders_;
-        std::vector<ge211:Position> player_bullets_;
-        std::vector<ge211::Position> invader_bullets_;
+        using invader_link = std::shared_ptr<invader_>;
+
+
+        // goes through all player_bullet_ positions and
+        // checks if any have intersected with an invader, updates score
+        void player_bullet_hit_invader() const;
+
+        // goes through all invader_bullet_ positions and checks if any have
+        // intersected with the player, updates lives
+        void invader_bullet_hit_player() const;
+
+        // goes through all invaders_ positions and checks if any have
+        // intersected with the player, updates lives
+        bool invader_hit_player() const;
+
+        void init_invaders();
+
+        std::vector<std::vector<invader_>> invaders_;
+        std::vector<ge211::Basic_position<double>> player_bullets_;
+        std::vector<ge211::Basic_position<double>> invader_bullets_;
 
         //three formations: block formation, up-down formation, step formation
         //                    x x x x x x    x   x   x   x       x x x x x
         //                    x x x x x x    x x x x x x x              x x x x x
-        //                    x x x x x x    x   x   x   x                   x x x x x
+        //
     };
+
+
 
 
 

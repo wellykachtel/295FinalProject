@@ -8,16 +8,13 @@ using namespace ge211;
 namespace invaders {
 
     Controller::Controller(int c, int r)
-        : model_(c, r)
+        : model_()
         , view_(model_)
-        , mouse_column_(-1)
-        , mouse_row_(-1)
-        , selected_column_(-1)
-        , selected_row_(-1)
+        , mouse_pos_{-1, -1}
     {  }
 
     void Controller::draw(Sprite_set& set) {
-        view_.draw(set, selected_column_, selected_row_, mouse_column_, mouse_row_);
+        view_.draw(set, mouse_pos_);
     }
 
     Dimensions Controller::initial_window_dimensions() const {
@@ -47,8 +44,12 @@ namespace invaders {
             //move player left
         } else if (key == Key::right()) {
             //move player right
-        } else if (key == Key::code(" ")) {
+        } //else if (key == Key::code(" ")) {
             //shoot bullet
-        }
+        //}
+    }
+
+    void Controller::on_frame(double seconds) {
+
     }
 }

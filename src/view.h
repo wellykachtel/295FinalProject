@@ -7,14 +7,14 @@
 namespace invaders {
 
     ge211::Color const player_bullet_color = ge211::Color::white();
-    ge211::Color const invader_bullet_color = ge211::Color::red();
+    ge211::Color const invader_bullet_color = ge211::Color::medium_red();
     ge211::Color const player_indicate_color = ge211::Color::medium_blue().lighten(0.3);
 
     class View
     {
     public:
         explicit View(Model const&);
-        void draw(ge211::Sprite_set&) const;
+        void draw(ge211::Sprite_set&, ge211::Position) const;
         ge211::Dimensions screen_dimensions() const;
 
 

@@ -6,7 +6,7 @@ namespace invaders {
         : model_(model)
     { }
 
-    void View::draw(ge211::Sprite_set& sprites) const {
+    void View::draw(ge211::Sprite_set& sprites, ge211::Position mouse_pos) const {
 
     }
 
