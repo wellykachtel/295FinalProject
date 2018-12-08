@@ -10,7 +10,7 @@ namespace invaders {
         init_invaders();
     }
 
-    void Model::move_player(Player_direction) {
+    void Model::move_player() {
 
     }
 
@@ -40,57 +40,57 @@ namespace invaders {
     }
 
     void Model::init_invaders() {
+
         switch(level_) {
             case 1:
             case 4:
             case 7: {
-                std::vector<invader_> cols;
-                cols.emplace_back(true, 3, Invader_difficulty::hard);
-                cols.emplace_back(true, 2, Invader_difficulty::medium);
-                cols.emplace_back(true, 1, Invader_difficulty::easy);
-                for (size_t i = 0; i < 6; ++i)
-                    invaders_.push_back(cols);
+                invaders_.emplace_back(6, invader_(Invader_difficulty::hard));
+                invaders_.emplace_back(6, invader_(Invader_difficulty::medium));
+                invaders_.emplace_back(6, invader_(Invader_difficulty::easy));
                 break;
             }
             case 2:
             case 5:
             case 8: {
-                std::vector<invader_> cols_type1;
-                std::vector<invader_> cols_type2;
-                cols_type1.emplace_back(true, 3, Invader_difficulty::hard);
-                cols_type1.emplace_back(true, 2, Invader_difficulty::medium);
-                cols_type1.emplace_back(true, 1, Invader_difficulty::easy);
-                cols_type2.emplace_back(nullptr);
-                cols_type2.emplace_back(true, 2, Invader_difficulty::medium);
-                cols_type2.emplace_back(nullptr);
+                std::vector<invader_> hard_row;
+                std::vector<invader_> easy_row;
 
                 for (size_t i = 0; i < 6; ++i) {
                     if (i % 2) {
-                        invaders_.push_back(cols_type2);
+                        hard_row.emplace_back(Invader_difficulty::hard);
+                        easy_row.emplace_back(Invader_difficulty::easy);
                     } else {
-                        invaders_.push_back(cols_type1);
+                        hard_row.emplace_back(Invader_difficulty::none);
+                        easy_row.emplace_back(Invader_difficulty::none);
                     }
                 }
+                invaders_.push_back(hard_row);
+                invaders_.emplace_back(6, invader_(Invader_difficulty::medium));
+                invaders_.push_back(easy_row);
                 break;
             }
             case 3:
             case 6:
             case 9: {
-                for (size_t i = 0; i < 10; ++i) {
-                    for (size_t j = 0; j < 3; ++j) {
-                        if(j == 0 && i < 6)
-                            invaders_.at(j).emplace_back(true, 3, Invader_difficulty::hard);
-                        else if(j == 1 && i < 8 && i > 1)
-                            invaders_.at(j).emplace_back(true, 2, Invader_difficulty::medium);
-                        else if(j == 2 && i > 3)
-                            invaders_.at(j).emplace_back(true, 1, Invader_difficulty::easy);
-                        else invaders_.at(i).emplace_back(nullptr);
+                std::vector<invader_> helper_cols;
+                for (size_t i = 0; i < 3; ++i) {
+                    for (size_t j = 0; j < 10; ++j) {
+                        if(i == 0 && j < 6)
+                            helper_cols.emplace_back(Invader_difficulty::hard);
+                        else if(i == 1 && j < 8 && j > 1)
+                            helper_cols.emplace_back(Invader_difficulty::medium);
+                        else if(i == 2 && j > 3)
+                            helper_cols.emplace_back(Invader_difficulty::easy);
+                        else helper_cols.emplace_back(Invader_difficulty::none);
                     }
+                    invaders_.push_back(helper_cols);
+                    helper_cols.clear();
                 }
                 break;
             }
             default:
-                invaders_.emplace_back(nullptr);
+                invaders_.emplace_back(invader_(Invader_difficulty::none));
         }
 
     }

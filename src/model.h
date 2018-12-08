@@ -6,12 +6,8 @@
 
 namespace invaders {
 
-    enum class Player_direction {
-        left, right, neither
-    };
-
     enum class Invader_difficulty {
-        easy, medium, hard
+        easy, medium, hard, none
     };
 
 
@@ -21,7 +17,7 @@ namespace invaders {
         explicit Model();
 
         //left or right, by a discrete distance
-        void move_player(Player_direction);
+        void move_player();
 
         // actual motion depends on level
         // levels 1-3, they just move down the screen
@@ -76,17 +72,28 @@ namespace invaders {
         player player_;
 
         struct invader_ {
-            invader_(bool active, int hits_left, Invader_difficulty difficulty)
-                : active(active),hits_left(hits_left),difficulty(difficulty) {}
+            invader_(Invader_difficulty difficulty)
+                    : difficulty(difficulty) {
+                if (difficulty == Invader_difficulty::hard) {
+                    hits_left = 3;
+                    active = true;
+                } else if (difficulty == Invader_difficulty::medium) {
+                    hits_left = 2;
+                    active = true;
+                } else if (difficulty == Invader_difficulty::easy) {
+                    hits_left = 1;
+                    active = true;
+                } else {
+                    hits_left = 0;
+                    active = false;
+                }
+            }
             //ge211::Basic_position<double> pos;
             bool active;
             int hits_left;
             Invader_difficulty difficulty;
 
         };
-
-        using invader_link = std::shared_ptr<invader_>;
-
 
         // goes through all player_bullet_ positions and
         // checks if any have intersected with an invader, updates score
