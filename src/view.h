@@ -16,6 +16,8 @@ namespace invaders {
         explicit View(Model const&);
         void draw(ge211::Sprite_set&, ge211::Position) const;
         ge211::Dimensions screen_dimensions() const;
+        ge211::Position board_to_screen(ge211::Position board_pos) const;
+        ge211::Position screen_to_board(ge211::Position screen_pos) const;
 
 
 
