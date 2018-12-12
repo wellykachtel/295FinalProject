@@ -56,9 +56,11 @@ namespace invaders {
         void invader_shoot_bullet();
 
 
-        //checks if something is within the screen
-        bool in_boundary(position const & pos_moving_thing, position const & pos_stationary_thing,
-                        dimension const & dim_moving_thing, dimension const &  dim_stationary_thing) const;
+        bool check_collision_up(position const & pos_top_thing, position const & pos_bottom_thing,
+                            dimension const & dim_top_thing, dimension const & dim_bottom_thing) const;
+
+        bool check_collision_down(position const & pos_top_thing, position const & pos_bottom_thing,
+                             dimension const & dim_top_thing, dimension const & dim_bottom_thing) const;
 
         bool in_screen(position const & a_thing_pos, dimension const & a_thing_dim);
 
@@ -101,6 +103,7 @@ namespace invaders {
         bool is_game_started() const;
         void start_game();
         bool show_player_hit() const;
+        double get_time();
 
 
     private:

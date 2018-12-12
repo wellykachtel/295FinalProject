@@ -25,6 +25,7 @@ namespace invaders {
 
             sprites.add_sprite(start, ge211::Position{((int)screen_dim.width / 2) - (start.dimensions().width / 2),
                                                       (int)screen_dim.height - 100});
+            return;
         }
 
 

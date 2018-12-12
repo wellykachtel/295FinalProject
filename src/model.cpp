@@ -10,7 +10,7 @@ namespace invaders {
         frame_count_(0), game_started(false),
         player_hit(-1)
     {
-        init_invaders();
+
     }
 
     void Model::move_player(Direction dir) {
@@ -245,7 +245,7 @@ namespace invaders {
         for (size_t i = 0; i < invaders_.size(); ++i) {
             for (size_t j = 0; j < invaders_.at(i).size(); ++j) {
                 auto &invader = invaders_.at(i).at(j);
-                if (invader.active && in_boundary(player_bullet, invader.pos, bullet_dim, invader_dim)) {
+                if (invader.active && check_collision_up(invader.pos, player_bullet,invader_dim, bullet_dim)) {
                     --invader.hits_left;
                     if(!invader.hits_left)
                         invader.active = false;
@@ -258,32 +258,47 @@ namespace invaders {
     }
 
     bool Model::invader_bullet_hit_player(position invader_bullet) const {
-        return in_boundary(invader_bullet, position{player_.x_pos, player_y_pos}, bullet_dim, player_dim);
+        return check_collision_down(invader_bullet, position{player_.x_pos, player_y_pos}, bullet_dim, player_dim);
     }
 
 
-    bool Model::in_boundary(position const &  pos_moving_thing, position const &  pos_stationary_thing,
-            dimension const & dim_moving_thing, dimension const & dim_stationary_thing) const {
+    bool Model::check_collision_down(position const &pos_top_thing, position const &pos_bottom_thing,
+                                dimension const &dim_top_thing, dimension const &dim_bottom_thing) const {
+        double top_border = pos_bottom_thing.y;
+        double right_border = pos_bottom_thing.x;
+        double left_border = pos_bottom_thing.x + dim_bottom_thing.width;
 
-        double right_boundary = pos_stationary_thing.x + dim_stationary_thing.width;
-        double left_boundary = pos_stationary_thing.x;
-        double top_boundary = pos_stationary_thing.y;
-        double bottom_boundary = pos_stationary_thing.y + dim_stationary_thing.height;
+        return pos_top_thing.y + dim_top_thing.height >= top_border
+               && pos_top_thing.x > right_border
+               && pos_top_thing.x < left_border;
+    }
 
-        return pos_moving_thing.y >= top_boundary
-               && pos_moving_thing.y + dim_moving_thing.height <= bottom_boundary
-               && pos_moving_thing.x >= left_boundary
-               && pos_moving_thing.x + dim_moving_thing.width <= right_boundary;
+    bool Model::check_collision_up(position const &pos_top_thing, position const &pos_bottom_thing,
+                                     dimension const &dim_top_thing, dimension const &dim_bottom_thing) const {
+        double bottom_border = pos_top_thing.y + dim_top_thing.height;
+        double right_border = pos_top_thing.x;
+        double left_border = pos_top_thing.x + dim_top_thing.width;
+
+        return pos_bottom_thing.y <= bottom_border
+               && pos_bottom_thing.x > right_border
+               && pos_bottom_thing.x + dim_bottom_thing.width < left_border;
     }
 
     bool Model::in_screen(position const & a_thing_pos,
                           dimension const & a_thing_dim) {
-        return in_boundary(a_thing_pos, position{0, 0}, a_thing_dim, screen_dim);
+        double right_boundary = screen_dim.width;
+        double left_boundary = 0;
+        double top_boundary = 0;
+        double bottom_boundary = screen_dim.height;
+        return a_thing_pos.y >= top_boundary
+                && a_thing_pos.y + a_thing_dim.height <= bottom_boundary
+                && a_thing_pos.x >= left_boundary
+                && a_thing_pos.x + a_thing_dim.width <= right_boundary;
     }
 
     bool Model::invader_hit_player(invader_ const & an_invader) const {
         if (an_invader.active)
-            return in_boundary(an_invader.pos, position{player_.x_pos, player_y_pos}, invader_dim, player_dim);
+            return check_collision_down(an_invader.pos, position{player_.x_pos, player_y_pos}, invader_dim, player_dim);
 
         return false;
 
@@ -384,6 +399,10 @@ namespace invaders {
 
     bool Model::is_game_win() const {
         return game_win;
+    }
+
+    double Model::get_time() {
+        return time_;
     }
 
 
