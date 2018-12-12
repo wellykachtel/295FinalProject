@@ -8,7 +8,7 @@ namespace invaders {
 class Controller : public ge211::Abstract_game
 {
 public:
-    explicit Controller(int c = 3, int r = 3);
+    explicit Controller();
 
 protected:
     ge211::Dimensions initial_window_dimensions() const override;
@@ -21,6 +21,5 @@ protected:
 private:
     Model model_;
     View view_;
-    ge211::Position mouse_pos_;
 };
 }

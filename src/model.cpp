@@ -5,65 +5,97 @@
 namespace invaders {
 
     Model::Model()
-        :level_(1), score_(0), player_{0, 3}
+        :level_(1), score_(0),
+        player_{0, 3}, time_(0),
+        frame_count_(0), game_started(false),
+        player_hit(-1)
     {
         init_invaders();
     }
 
     void Model::move_player(Direction dir) {
 
-        if(dir == Direction::left
-            && in_screen(position{player_.x_pos - 5, 0}, player_dim))
+        if(dir == Direction::left) {
             player_.x_pos -= player_displacement;
-        else if(dir == Direction::right
-                && in_screen(position{player_.x_pos + 5, 0}, player_dim))
+            if (!in_screen(position{player_.x_pos, player_y_pos}, player_dim))
+                player_.x_pos = 0;
+        } else if(dir == Direction::right) {
             player_.x_pos += player_displacement;
+            if(!in_screen(position{player_.x_pos, player_y_pos}, player_dim))
+                player_.x_pos = screen_dim.width - player_dim.width;
+        }
+
     }
 
     void Model::move_invaders() {
 
-        time_;
         //need to handle row by row since some rows may be "turning around" before others
         // levels 1-3, they just move down the screen after a certain amount of time
         // levels 4-6, they move down and side to side after a certain amount of time
         // levels 7-9, they move down and side to side, but faster
+        if(level_ < 4) {
+            if (frame_count_ % 1000 != 0) return;
+        } else if (level_ < 7) {
+            if (frame_count_ % 100 != 0) return;
+        } else {
+            if (frame_count_ % 50 != 0) return;
+        }
 
-        for (auto invader_row : invaders_) {
+        for (auto &invader_row : invaders_) {
             //this will go row by row
             int x = 1;
             size_t row_size = invader_row.size();
-            auto invader_check = invader_row.back();
-            if(invader_row.at(0).direction == Direction::left) {
-                x = -1;
-                invader_check = invader_row.at(0);
-            }
+            //find the right and left most invaders
 
-            for (auto invader : invader_row) {
-                if(level_ > 3) {
-                    if(!in_screen(position{invader_check.pos.x + x * invader_displacement,
-                                           invader_check.pos.y}, invader_dim))
-                    {
-                        invader.direction = invader.direction == Direction::right ? Direction::left : Direction::right;
-                        invader.pos.y += invader_displacement;
-                    } else {
-                        invader.pos.x += x * invader_displacement;
+            if(row_has_active_invaders(invader_row)) {
+                invader_ invader_check = invader_row.back();
+                if (invader_row.at(0).direction == Direction::left) {
+                    for (size_t i = 0; i < row_size; ++i) {
+                        if (invader_row.at(i).active) {
+                            invader_check = invader_row.at(i);
+                            break;
+                        }
                     }
+                    x = -1;
                 } else {
-                    invader.pos.y += invader_displacement;
+                    for (size_t i = row_size - 1; i >= 0; --i) {
+                        if (invader_row.at(i).active) {
+                            invader_check = invader_row.at(i);
+                            break;
+                        }
+                    }
                 }
 
-                if(invader_hit_player(invader)) {
-                    //game ends
+                for (auto &invader : invader_row) {
+                    if (level_ > 3) {
+                        double test_x = invader_check.pos.x;
+                        if (!in_screen(position{test_x + x * invader_displacement,
+                                                invader_check.pos.y}, invader_dim)) {
+                            invader.direction =
+                                    invader.direction == Direction::right ? Direction::left : Direction::right;
+                            if (level_ > 6)
+                                invader.pos.y += (invader_displacement * 2);
+                            else
+                                invader.pos.y += invader_displacement;
+                        } else
+                            invader.pos.x += x * invader_displacement;
+                    } else
+                        invader.pos.y += invader_displacement;
+
+                    if (invader.active && (invader_hit_player(invader) || (!in_screen(invader.pos, invader_dim)))) {
+                        player_.lives = 0;
+                        game_started = false;
+                    }
                 }
             }
         }
     }
 
-    int Model::get_lives() {
+    int Model::get_lives() const{
         return player_.lives;
     }
 
-    double Model::get_player_pos() {
+    double Model::get_player_pos() const {
         return player_.x_pos;
     }
 
@@ -73,11 +105,13 @@ namespace invaders {
     }
 
     void Model::player_shoot_bullet() {
-        player_bullets_.emplace_back(player_.x_pos, screen_dim.height - player_dim.height);
+        player_bullets_.emplace_back(player_.x_pos + (player_dim.width / 2) - (bullet_dim.width / 2),
+                                     player_y_pos - bullet_dim.height);
     }
 
     void Model::invader_shoot_bullet() {
-        time_;
+
+        if (frame_count_ % 1000 != 0) return;
 
         std::random_device rd;
         std::mt19937 mt(rd());
@@ -85,7 +119,10 @@ namespace invaders {
         size_t index = dist(mt);
         std::uniform_int_distribution<> dist2(0, invaders_.at(index).size() - 1);
         size_t index2 = dist2(mt);
-        invader_bullets_.push_back(invaders_.at(index).at(index2).pos);
+        if(invaders_.at(index).at(index2).active) {
+            invader_bullets_.push_back(position{invaders_.at(index).at(index2).pos.x + (invader_dim.width / 2),
+                                                invaders_.at(index).at(index2).pos.y + invader_dim.height});
+        }
     }
 
     void Model::init_invaders() {
@@ -94,15 +131,16 @@ namespace invaders {
         std::vector<invader_> hard_row;
         std::vector<invader_> medium_row;
         std::vector<invader_> easy_row;
+        double starting_x = (screen_dim.width - (invader_dim.width * 6)) / 2;
 
         switch(level_) {
             case 1:
             case 4:
             case 7: {
                 for (size_t i = 0; i < 6; ++i) {
-                    hard_row.emplace_back(Invader_difficulty::hard, position{x * i, 0});
-                    medium_row.emplace_back(Invader_difficulty::medium, position{x * i, y * 1});
-                    easy_row.emplace_back(Invader_difficulty::easy, position{x * i, y * 2});
+                    hard_row.emplace_back(Invader_difficulty::hard, position{x * i + starting_x, 0});
+                    medium_row.emplace_back(Invader_difficulty::medium, position{x * i + starting_x, y * 1});
+                    easy_row.emplace_back(Invader_difficulty::easy, position{x * i + starting_x, y * 2});
                 }
                 invaders_.push_back(hard_row);
                 invaders_.push_back(medium_row);
@@ -113,19 +151,23 @@ namespace invaders {
             case 5:
             case 8: {
 
+                std::vector<invader_> medium_row2;
+
                 for (size_t i = 0; i < 6; ++i) {
                     if (i % 2) {
-                        hard_row.emplace_back(Invader_difficulty::hard, position{x * i, 0});
-                        easy_row.emplace_back(Invader_difficulty::easy, position{x * i, y * 2});
+                        hard_row.emplace_back(Invader_difficulty::hard, position{x * i + starting_x, 0});
+                        easy_row.emplace_back(Invader_difficulty::easy, position{x * i + starting_x, y * 2});
                     } else {
-                        hard_row.emplace_back(Invader_difficulty::none, position{x * i, y * 0});
-                        easy_row.emplace_back(Invader_difficulty::none, position{x * i, y * 2});
+                        hard_row.emplace_back(Invader_difficulty::none, position{x * i + starting_x, y * 0});
+                        easy_row.emplace_back(Invader_difficulty::none, position{x * i + starting_x, y * 2});
                     }
-                    medium_row.emplace_back(Invader_difficulty::medium, position{x * i, y * 1});
+                    medium_row.emplace_back(Invader_difficulty::medium, position{x * i + starting_x, y * 1});
+                    medium_row2.emplace_back(Invader_difficulty::medium, position{x * i + starting_x, y * 3});
                 }
                 invaders_.push_back(hard_row);
                 invaders_.push_back(medium_row);
                 invaders_.push_back(easy_row);
+                invaders_.push_back(medium_row2);
                 break;
             }
             case 3:
@@ -154,44 +196,59 @@ namespace invaders {
     }
 
     void Model::move_bullets() {
+
+        auto player_bullet_displacement = player_bullet_speed * time_;
+        auto invader_bullet_displacement = invader_bullet_speed1 * time_;
+        if(level_ > 6)
+            invader_bullet_displacement = invader_bullet_speed3 * time_;
+        else if (level_ > 3)
+            invader_bullet_displacement = invader_bullet_speed2 * time_;
+
         for(size_t i = 0; i < player_bullets_.size(); ++i) {
-            auto bullet = player_bullets_.at(i);
+            auto &bullet = player_bullets_.at(i);
             bullet.y -= player_bullet_displacement;
             if(player_bullet_hit_invader(bullet)) {
                 score_ += 10;
+                if ((score_ % 1000 == 0) && player_.lives < 3)
+                    player_.lives ++;
+
                 player_bullets_.erase(player_bullets_.begin() + i);
-            } else if(!in_screen(bullet,bullet_dim)) {
+                if(check_player_win()) {
+                    go_to_next_level();
+                    break;
+                }
+            } else if(!in_screen(bullet,bullet_dim))
                 player_bullets_.erase(player_bullets_.begin() + i);
-            }
         }
 
         for(size_t i = 0; i < invader_bullets_.size(); ++i) {
-            auto bullet = invader_bullets_.at(i);
+            auto &bullet = invader_bullets_.at(i);
             bullet.y += invader_bullet_displacement;
             if(invader_bullet_hit_player(bullet) ) {
                 --player_.lives;
+                player_hit = time_;
                 invader_bullets_.erase(invader_bullets_.begin() + i);
-            } else if(!in_screen(bullet, bullet_dim)) {
+                if(is_game_lose()) {
+                    game_started = false;
+                    break;
+                }
+            } else if(!in_screen(bullet, bullet_dim))
                 invader_bullets_.erase(invader_bullets_.begin() + i);
-            }
         }
 
     }
 
-    bool Model::player_bullet_hit_invader(position player_bullet) const {
+    bool Model::player_bullet_hit_invader(position player_bullet) {
 
         bool result = false;
 
         for (size_t i = 0; i < invaders_.size(); ++i) {
             for (size_t j = 0; j < invaders_.at(i).size(); ++j) {
-                auto invader = invaders_.at(i).at(j);
-                if (in_boundary(player_bullet, invader.pos, bullet_dim, invader_dim)) {
-
+                auto &invader = invaders_.at(i).at(j);
+                if (invader.active && in_boundary(player_bullet, invader.pos, bullet_dim, invader_dim)) {
                     --invader.hits_left;
-                    if(!invader.hits_left) {
+                    if(!invader.hits_left)
                         invader.active = false;
-                    }
-
                     result = true;
                 }
             }
@@ -201,66 +258,133 @@ namespace invaders {
     }
 
     bool Model::invader_bullet_hit_player(position invader_bullet) const {
-
-        return in_boundary(invader_bullet, position{player_.x_pos, 0}, bullet_dim, player_dim);
+        return in_boundary(invader_bullet, position{player_.x_pos, player_y_pos}, bullet_dim, player_dim);
     }
 
 
     bool Model::in_boundary(position const &  pos_moving_thing, position const &  pos_stationary_thing,
             dimension const & dim_moving_thing, dimension const & dim_stationary_thing) const {
 
-
         double right_boundary = pos_stationary_thing.x + dim_stationary_thing.width;
         double left_boundary = pos_stationary_thing.x;
         double top_boundary = pos_stationary_thing.y;
         double bottom_boundary = pos_stationary_thing.y + dim_stationary_thing.height;
 
-        return pos_moving_thing.x + dim_moving_thing.height > top_boundary && pos_moving_thing.x < bottom_boundary
-               && pos_moving_thing.y > left_boundary && pos_moving_thing.y + dim_moving_thing.width < right_boundary;
+        return pos_moving_thing.y >= top_boundary
+               && pos_moving_thing.y + dim_moving_thing.height <= bottom_boundary
+               && pos_moving_thing.x >= left_boundary
+               && pos_moving_thing.x + dim_moving_thing.width <= right_boundary;
     }
 
     bool Model::in_screen(position const & a_thing_pos,
                           dimension const & a_thing_dim) {
-        return in_boundary(a_thing_pos, position{0,0}, a_thing_dim, screen_dim);
+        return in_boundary(a_thing_pos, position{0, 0}, a_thing_dim, screen_dim);
     }
 
     bool Model::invader_hit_player(invader_ const & an_invader) const {
-        if (an_invader.difficulty != Invader_difficulty::none)
-            return in_boundary(an_invader.pos, position{player_.x_pos, screen_dim.height}, invader_dim, player_dim);
+        if (an_invader.active)
+            return in_boundary(an_invader.pos, position{player_.x_pos, player_y_pos}, invader_dim, player_dim);
 
         return false;
 
     }
 
     bool Model::check_player_win() {
-        for(auto invader_row : invaders_) {
-            for (auto invader : invader_row) {
-                if (invader.active) {
-                    return false;
-                }
-            }
-        }
+        for(auto invader_row : invaders_)
+            if(row_has_active_invaders(invader_row))
+                return false;
 
         return true;
     }
 
     ge211::Dimensions Model::get_invader_grid_size() const {
-        return ge211::Dimensions{(int)invaders_.size(), (int)invaders_.at(0).size()};
+        return ge211::Dimensions{(int)invaders_.at(0).size(), (int)invaders_.size()};
     }
 
-    position Model::get_invader_pos(ge211::Dimensions dim) const {
-        assert(invaders_.size() < dim.width && invaders_.at(0).size() < dim.height);
-        return invaders_.at(dim.width).at(dim.height).pos;
+    ge211::Position Model::get_invader_pos(ge211::Position pos) const {
+        assert(pos.x < invaders_.size() && pos.y < invaders_.at(0).size());
+        return invaders_.at(pos.x).at(pos.y).pos.into<int>();
     }
 
-    Invader_difficulty Model::get_invader_diff(ge211::Dimensions dim) const {
-        assert(invaders_.size() < dim.width && invaders_.at(0).size() < dim.height);
-        return invaders_.at(dim.width).at(dim.height).difficulty;
+    Invader_difficulty Model::get_invader_diff(ge211::Position pos) const {
+        assert(pos.x < invaders_.size() && pos.y < invaders_.at(0).size());
+        return invaders_.at(pos.x).at(pos.y).difficulty;
     }
 
-    int Model::get_invader_hits(ge211::Dimensions dim) const {
-        assert(invaders_.size() < dim.width && invaders_.at(0).size() < dim.height);
-        return invaders_.at(dim.width).at(dim.height).hits_left;
+    int Model::get_invader_hits(ge211::Position pos) const {
+        assert(pos.x < invaders_.size() && pos.y < invaders_.at(0).size());
+        return invaders_.at(pos.x).at(pos.y).hits_left;
     }
+
+    bool Model::get_invader_active(ge211::Position pos) const {
+        assert(pos.x < invaders_.size() && pos.y < invaders_.at(0).size());
+        return invaders_.at(pos.x).at(pos.y).active;
+    }
+
+    void Model::inc_time(double seconds) {
+        time_ += seconds;
+        ++frame_count_;
+    }
+
+    std::vector<position> Model::get_player_bullets() const {
+        return player_bullets_;
+    }
+
+    std::vector<position> Model::get_invader_bullets() const {
+        return invader_bullets_;
+    }
+
+    int Model::get_level() const {
+        return level_;
+    }
+
+    bool Model::is_game_lose() const {
+        return get_lives() <= 0;
+    }
+
+    void Model::go_to_next_level() {
+        if(is_game_lose()) return;
+        if(level_ == 9) {
+            game_win = true;
+            game_started = false;
+        }
+        ++level_;
+        player_bullets_.clear();
+        invader_bullets_.clear();
+        invaders_.clear();
+        init_invaders();
+    }
+
+    bool Model::is_game_started() const {
+        return game_started;
+    }
+
+    void Model::start_game() {
+        level_ = 1;
+        score_ = 0;
+        player_bullets_.clear();
+        invader_bullets_.clear();
+        invaders_.clear();
+        init_invaders();
+        player_.lives = 3;
+        player_.x_pos = 0;
+        game_started = true;
+    }
+
+    bool Model::row_has_active_invaders(std::vector<invader_> invader_row) const {
+        for(auto invader : invader_row)
+            if(invader.active) return true;
+
+        return false;
+    }
+
+    bool Model::show_player_hit() const{
+        return time_ - player_hit <= 0.5;
+    }
+
+    bool Model::is_game_win() const {
+        return game_win;
+    }
+
 
 }

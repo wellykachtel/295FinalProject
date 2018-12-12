@@ -17,20 +17,24 @@ namespace invaders {
         right, left
     };
 
-    double const player_displacement = 5;
+    double const player_displacement = 7;
     double const invader_displacement = 5;
-    double const player_bullet_displacement = 5;
-    double const invader_bullet_displacement = 5;
-    dimension const invader_dim{530, 530};
+    dimension const invader_dim{50, 50};
     dimension const bullet_dim{3, 10};
-    dimension const player_dim{414, 256};
-    dimension const screen_dim{invader_dim.width * 14, invader_dim.height * 10};
+    dimension const player_dim{60, 37};
+    dimension const screen_dim{invader_dim.width * 10, invader_dim.height * 10};
+    int const bottom_margin{100};
+    double const player_y_pos = screen_dim.height - player_dim.height;
 
+    double const player_bullet_speed{.05}; // px/s
+    double const invader_bullet_speed1{.01};
+    double const invader_bullet_speed2{.03};
+    double const invader_bullet_speed3{.05};
 
     class Model {
     public:
 
-        Model();
+        explicit Model();
 
         //left or right, by a discrete distance
         void move_player(Direction);
@@ -42,17 +46,6 @@ namespace invaders {
         void move_invaders();
 
         void move_bullets();
-
-        // lives will be displayed on the screen
-        // updated by `invader_bullet_hit_player`
-        // and `invader_hit_player`
-        int get_lives();
-
-        double get_player_pos();
-
-        // score will be displayed on the screen
-        // updated by `player_bullet_hit_invader`
-        int get_score();
 
         // adds a bullet to the player_bullets_ vector
         // at the position where the player is
@@ -69,20 +62,45 @@ namespace invaders {
 
         bool in_screen(position const & a_thing_pos, dimension const & a_thing_dim);
 
-        //checks if 0 lives
-        bool check_player_lose() const;
 
         //check if 0 invaders, advance to next level
         bool check_player_win();
 
         ge211::Dimensions get_invader_grid_size() const;
 
-        position get_invader_pos(ge211::Dimensions) const;
+        ge211::Position get_invader_pos(ge211::Position) const;
 
-        Invader_difficulty get_invader_diff(ge211::Dimensions) const;
+        Invader_difficulty get_invader_diff(ge211::Position) const;
 
-        int get_invader_hits(ge211::Dimensions) const;
+        int get_invader_hits(ge211::Position) const;
 
+        bool get_invader_active(ge211::Position) const;
+
+        void inc_time(double seconds);
+
+        std::vector<position> get_player_bullets() const;
+
+        std::vector<position> get_invader_bullets() const;
+
+        // lives will be displayed on the screen
+        // updated by `invader_bullet_hit_player`
+        // and `invader_hit_player`
+        int get_lives() const;
+
+        int get_level() const;
+
+        double get_player_pos() const;
+
+        // score will be displayed on the screen
+        // updated by `player_bullet_hit_invader`
+        int get_score();
+
+        bool is_game_lose() const;
+        bool is_game_win() const;
+        void go_to_next_level();
+        bool is_game_started() const;
+        void start_game();
+        bool show_player_hit() const;
 
 
     private:
@@ -90,6 +108,10 @@ namespace invaders {
         int level_;
         int score_;
         double time_;
+        int frame_count_;
+        bool game_started;
+        double player_hit;
+        bool game_win;
 
         struct player {
             double x_pos;
@@ -125,7 +147,7 @@ namespace invaders {
 
         // goes through all player_bullet_ positions and
         // checks if any have intersected with an invader, updates score
-        bool player_bullet_hit_invader(position player_bullet) const;
+        bool player_bullet_hit_invader(position player_bullet);
 
         // goes through all invader_bullet_ positions and checks if any have
         // intersected with the player, updates lives
@@ -137,14 +159,17 @@ namespace invaders {
 
         void init_invaders();
 
+        bool row_has_active_invaders(std::vector<invader_>) const;
+
+        // bullets are continuous motion, so they need to be in doubles
         std::vector<std::vector<invader_>> invaders_;
         std::vector<position> player_bullets_;
         std::vector<position> invader_bullets_;
 
         //three formations: block formation, up-down formation, step formation
-        //                    x x x x x x    x   x   x   x       x x x x x
-        //                    x x x x x x    x x x x x x x              x x x x x
-        //
+        //                    x x x x x x      x   x   x         x x x x x
+        //                    x x x x x x    x x x x x x               x x x x x
+        //                                     x   x   x
     };
 
 

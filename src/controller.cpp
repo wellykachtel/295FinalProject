@@ -7,14 +7,28 @@ using namespace ge211;
 
 namespace invaders {
 
-    Controller::Controller(int c, int r)
+    Controller::Controller()
         : model_()
         , view_(model_)
-        , mouse_pos_{-1, -1}
     {  }
 
     void Controller::draw(Sprite_set& set) {
-        view_.draw(set, mouse_pos_);
+
+        if (!model_.is_game_lose() || !model_.is_game_started()) {
+
+            view_.score_sprite.reconfigure(Text_sprite::Builder(view_.roboto20)
+                                                   << model_.get_score());
+            set.add_sprite(view_.score_sprite, {(int) screen_dim.width - view_.score_sprite.dimensions().width - 10,
+                                                (int) screen_dim.height + 50});
+
+            view_.level_sprite.reconfigure(Text_sprite::Builder(view_.roboto20)
+                                                   << model_.get_level());
+            set.add_sprite(view_.level_sprite,
+                           {((int) screen_dim.width / 2) - (view_.level_sprite.dimensions().width / 2),
+                            (int) screen_dim.height + 50});
+        }
+
+        view_.draw(set);
     }
 
     Dimensions Controller::initial_window_dimensions() const {
@@ -41,15 +55,26 @@ namespace invaders {
         } else if (key == Key::code('f')) {
             get_window().set_fullscreen(!get_window().get_fullscreen());
         } else if (key == Key::left()) {
-            //move player left
+            model_.move_player(Direction::left);
         } else if (key == Key::right()) {
-            //move player right
-        } //else if (key == Key::code(" ")) {
+            model_.move_player(Direction::right);
+        } else if (key == Key::code(' ')) {
             //shoot bullet
-        //}
+            if (!model_.is_game_started()) {
+                model_.start_game();
+            } else {
+                model_.player_shoot_bullet();
+            }
+        }
     }
 
     void Controller::on_frame(double seconds) {
+        if(!model_.is_game_started()) return;
+
+        model_.inc_time(seconds);
+        model_.move_invaders();
+        model_.move_bullets();
+        model_.invader_shoot_bullet();
 
     }
 }
