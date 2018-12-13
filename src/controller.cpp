@@ -76,5 +76,7 @@ namespace invaders {
         model_.move_bullets();
         model_.invader_shoot_bullet();
 
+        std::cout<<seconds<<std::endl;
+
     }
 }

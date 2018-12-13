@@ -72,16 +72,77 @@ TEST_CASE("player in screen tests")
     CHECK(game.in_screen(position{game.get_player_pos(), player_y_pos}, player_dim));
 }
 
-TEST_CASE("check time with bullets")
+TEST_CASE("check time level 1")
 {
     Model game;
     game.start_game();
     game.set_frame_count(999);
-    game.invader_shoot_bullet();
     size_t invader_bullet_count = game.get_invader_bullets().size();
+    double y_pos_an_invader = game.get_invader_pos(ge211::Position{2,1}).y;
+    game.invader_shoot_bullet();
+    game.move_invaders();
+    CHECK(game.get_invader_bullets().size() == invader_bullet_count);
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).y == y_pos_an_invader);
     game.inc_time(1);
     game.invader_shoot_bullet();
+    game.move_invaders();
     CHECK(invader_bullet_count + 1 == game.get_invader_bullets().size());
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).y == y_pos_an_invader + invader_displacement);
 
 }
+
+TEST_CASE("check time level 4")
+{
+    Model game;
+    game.go_to_next_level(); //level 2
+    game.go_to_next_level(); //level 3
+    game.go_to_next_level(); //level 4
+    game.set_frame_count(999);
+    double x_pos_an_invader = game.get_invader_pos(ge211::Position{2,1}).x;
+    game.move_invaders();
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).x == x_pos_an_invader);
+    game.inc_time(1);
+    game.move_invaders();
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).x == x_pos_an_invader + invader_displacement);
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).x == x_pos_an_invader + invader_displacement);
+    double y_pos_an_invader = game.get_invader_pos(ge211::Position{2,1}).y;
+    //in order for a row to go down, it needs to be an the edge.
+    // for level 4, the right most needs to move 150 more pixels
+
+    int steps_to_right = 150 / (int)invader_displacement;
+    for(int i = 0; i < steps_to_right; ++i) {
+        game.move_invaders();
+    }
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).y == y_pos_an_invader + invader_displacement);
+}
+
+TEST_CASE("check time level 7")
+{
+    Model game;
+    game.go_to_next_level(); //level 2
+    game.go_to_next_level(); //level 3
+    game.go_to_next_level(); //level 4
+    game.go_to_next_level(); //level 5
+    game.go_to_next_level(); //level 6
+    game.go_to_next_level(); //level 7
+    game.set_frame_count(999);
+    double x_pos_an_invader = game.get_invader_pos(ge211::Position{2,1}).x;
+    game.move_invaders();
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).x == x_pos_an_invader);
+    game.inc_time(1);
+    game.move_invaders();
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).x == x_pos_an_invader + invader_displacement);
+    double y_pos_an_invader = game.get_invader_pos(ge211::Position{2,1}).y;
+    //in order for a row to go down, it needs to be an the edge.
+    // for level 7, the right most needs to move 150 more pixels
+
+    int steps_to_right = 150 / (int)invader_displacement;
+    for(int i = 0; i < steps_to_right; ++i) {
+        game.move_invaders();
+    }
+    CHECK(game.get_invader_pos(ge211::Position{2,1}).y == y_pos_an_invader + invader_displacement * 2);
+
+}
+
+
 
