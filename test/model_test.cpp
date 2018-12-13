@@ -72,7 +72,7 @@ TEST_CASE("player in screen tests")
     CHECK(game.in_screen(position{game.get_player_pos(), player_y_pos}, player_dim));
 }
 
-TEST_CASE("check time")
+TEST_CASE("check time with bullets")
 {
     Model game;
     game.start_game();
