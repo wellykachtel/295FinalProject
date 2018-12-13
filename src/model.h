@@ -104,6 +104,7 @@ namespace invaders {
         void start_game();
         bool show_player_hit() const;
         double get_time();
+        void set_frame_count(int);
 
 
     private:

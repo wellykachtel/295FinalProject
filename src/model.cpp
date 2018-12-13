@@ -405,5 +405,9 @@ namespace invaders {
         return time_;
     }
 
+    void Model::set_frame_count(int num) {
+        frame_count_ += num;
+    }
+
 
 }

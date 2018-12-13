@@ -75,8 +75,13 @@ TEST_CASE("player in screen tests")
 TEST_CASE("check time")
 {
     Model game;
-    double start_time = game.get_time();
+    game.start_game();
+    game.set_frame_count(999);
+    game.invader_shoot_bullet();
+    size_t invader_bullet_count = game.get_invader_bullets().size();
     game.inc_time(1);
-    CHECK(start_time + 1 == game.get_time());
+    game.invader_shoot_bullet();
+    CHECK(invader_bullet_count + 1 == game.get_invader_bullets().size());
+
 }
 
